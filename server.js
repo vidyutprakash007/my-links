@@ -196,14 +196,14 @@ fastify.post('/api/links', async (request, reply) => {
         protocol = 'https';
       }
       
-      const host = request.headers['x-forwarded-host'] || request.headers.host || `${request.hostname || 'localhost'}:${request.socket?.localPort || 3002}`;
+      const host = request.headers['x-forwarded-host'] || request.headers.host || `${request.hostname || 'localhost'}:${request.socket?.localPort || 3000}`;
       
       // Ensure we have a proper host (include port if not standard)
       if (host.includes(':')) {
         // Host already includes port
         baseUrl = `${protocol}://${host}`;
       } else {
-        const port = request.socket?.localPort || process.env.PORT || 3002;
+        const port = request.socket?.localPort || process.env.PORT || 3000;
         // Don't include port for standard HTTPS (443) or HTTP (80)
         if ((protocol === 'https' && port === 443) || (protocol === 'http' && port === 80)) {
           baseUrl = `${protocol}://${host}`;
@@ -991,7 +991,7 @@ const start = async () => {
       fastify.log.info('Supabase connected successfully');
     }
 
-    const port = process.env.PORT || 3002;
+    const port = process.env.PORT || 3000;
     const host = process.env.HOST || '0.0.0.0';
     await fastify.listen({ port, host });
     fastify.log.info(`Server is running on http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
