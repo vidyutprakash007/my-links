@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: identity-link-tracker
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: SUPABASE_KEY
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /
+

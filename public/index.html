@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 50px 40px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: none;
+            border: 2px solid #e9ecef;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .link-display {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .link-display input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            font-family: 'Courier New', monospace;
+        }
+
+        .clickable-link {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #f0f4ff;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            text-decoration: none;
+            display: inline-block;
+            word-break: break-all;
+            transition: all 0.2s;
+        }
+
+        .clickable-link:hover {
+            background: #e0e8ff;
+            border-color: #5568d3;
+            text-decoration: underline;
+        }
+
+        .copy-btn {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .info-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e7f3ff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #333;
+        }
+
+        /* Links List Section */
+        .links-section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .link-card {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .link-card:hover {
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+
+        .link-card.expanded {
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .link-header:hover {
+            background: #f8f9fa;
+        }
+
+        .expand-icon {
+            font-size: 20px;
+            color: #667eea;
+            transition: transform 0.3s;
+            margin-right: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .link-card.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .link-header-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+        }
+
+        .link-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+            flex: 1;
+        }
+
+        .link-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .link-url {
+            font-size: 13px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            opacity: 0.8;
+        }
+
+        .click-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .link-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .link-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f8f9fa;
+        }
+
+        .link-card.expanded .link-details {
+            max-height: 5000px;
+        }
+
+        .link-details-content {
+            padding: 24px;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-icon {
+            font-size: 28px;
+        }
+
+        .modal-message {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .modal-link-name {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 600;
+            color: #333;
+            border-left: 4px solid #dc3545;
+        }
+
+        .modal-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 25px;
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 120px;
+        }
+
+        .modal-btn-cancel {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e9ecef;
+            border-color: #d0d0d0;
+        }
+
+        .modal-btn-delete {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .modal-btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        .modal-btn:active {
+            transform: translateY(0);
+        }
+
+        .clicks-list {
+            margin-top: 0;
+        }
+
+        .click-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .click-item:hover {
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .click-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .click-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .detail-item:hover {
+            background: #e9ecef;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #333;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .google-maps-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 4px;
+            transition: all 0.2s;
+        }
+
+        .google-maps-link:hover {
+            color: #1a73e8;
+            text-decoration: underline;
+        }
+
+        .google-maps-link::before {
+            content: '📍';
+            font-size: 16px;
+        }
+
+        .no-clicks {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .refresh-btn {
+            width: auto;
+            padding: 10px 20px;
+            margin-top: 20px;
+            background: #6c757d;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            background: #5a6268;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Link Generator Section -->
+        <div class="container">
+            <h1>🔗 Link Tracker</h1>
+            <p class="subtitle">Generate a trackable link</p>
+
+            <form id="linkForm">
+                <div class="form-group">
+                    <label for="linkName">Enter Link Name</label>
+                    <input 
+                        type="text" 
+                        id="linkName" 
+                        name="linkName" 
+                        placeholder="e.g., My Link"
+                        required
+                        autofocus
+                    />
+                </div>
+                <button type="submit">Generate Link</button>
+            </form>
+
+            <div id="result" class="result">
+                <div class="result-label">Your Trackable Link</div>
+                <div class="link-display">
+                    <a href="" id="generatedLink" target="_blank" class="clickable-link" style="pointer-events: none; opacity: 0.5;">Link will appear here</a>
+                    <input type="text" id="generatedLinkText" readonly style="display: none;" />
+                    <button class="copy-btn" onclick="copyLink()">Copy</button>
+                </div>
+                <div class="success-message" id="copySuccess">✓ Link copied to clipboard!</div>
+            </div>
+
+            <div class="info-box">
+                <p>
+                    <strong>How it works:</strong><br>
+                    When someone opens your link, we automatically capture and save their:
+                    <strong>IP Address</strong>, <strong>Latitude</strong>, and <strong>Longitude</strong> to the database.
+                </p>
+            </div>
+        </div>
+
+        <!-- Links List Section -->
+        <div class="container links-section">
+            <h2 class="section-title">📊 All Links & Tracked Data</h2>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+                <button class="refresh-btn" onclick="loadAllLinks()">🔄 Refresh</button>
+                <button class="refresh-btn" onclick="toggleAutoRefresh()" id="autoRefreshBtn">⏸️ Auto-Refresh: OFF</button>
+            </div>
+            <div id="linksContainer">
+                <div class="loading">Loading links...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('linkForm');
+        const result = document.getElementById('result');
+        const generatedLink = document.getElementById('generatedLink');
+        const generatedLinkText = document.getElementById('generatedLinkText');
+        const copySuccess = document.getElementById('copySuccess');
+        const linksContainer = document.getElementById('linksContainer');
+
+        // Toggle function for expandable cards
+        window.toggleLinkCard = function(cardId) {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.toggle('expanded');
+            }
+        };
+
+        // Load all links on page load
+        loadAllLinks();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const linkName = document.getElementById('linkName').value.trim();
+
+            if (!linkName) {
+                alert('Please enter a link name');
+                return;
+            }
+
+            // Disable button during request
+            const submitBtn = form.querySelector('button');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/api/links', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `name=${encodeURIComponent(linkName)}`,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Set the clickable link
+                    const linkUrl = data.link.url;
+                    console.log('Setting link URL:', linkUrl); // Debug
+                    
+                    // Set href and make it clickable - use absolute URL
+                    generatedLink.href = linkUrl;
+                    generatedLink.textContent = linkUrl;
+                    generatedLink.target = '_blank';
+                    generatedLink.rel = 'noopener noreferrer';
+                    generatedLink.style.pointerEvents = 'auto';
+                    generatedLink.style.opacity = '1';
+                    generatedLink.style.cursor = 'pointer';
+                    
+                    // Verify the URL is valid
+                    try {
+                        new URL(linkUrl); // This will throw if URL is invalid
+                        console.log('Link URL is valid:', linkUrl);
+                    } catch (e) {
+                        console.error('Invalid URL:', linkUrl, e);
+                    }
+                    
+                    // Also set the hidden input for copying
+                    generatedLinkText.value = linkUrl;
+                    result.classList.add('show');
+                    form.reset();
+                    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    // Reload links list
+                    loadAllLinks();
+                } else {
+                    let errorMsg = data.error || 'Failed to create link';
+                    if (data.details) {
+                        errorMsg += '\n\nDetails: ' + data.details;
+                    }
+                    if (data.hint) {
+                        errorMsg += '\n\nHint: ' + data.hint;
+                    }
+                    alert(errorMsg);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create link. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Generate Link';
+            }
+        });
+
+        function copyLink() {
+            const linkUrl = generatedLinkText.value || generatedLink.href;
+            
+            try {
+                navigator.clipboard.writeText(linkUrl).then(() => {
+                    copySuccess.classList.add('show');
+                    setTimeout(() => {
+                        copySuccess.classList.remove('show');
+                    }, 3000);
+                });
+            } catch (err) {
+                // Fallback for older browsers
+                generatedLinkText.style.display = 'block';
+                generatedLinkText.select();
+                generatedLinkText.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                generatedLinkText.style.display = 'none';
+                copySuccess.classList.add('show');
+                setTimeout(() => {
+                    copySuccess.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        async function loadAllLinks() {
+            linksContainer.innerHTML = '<div class="loading">Loading links...</div>';
+            
+            try {
+                // Get all links
+                const linksResponse = await fetch('/api/links');
+                
+                if (!linksResponse.ok) {
+                    const errorData = await linksResponse.json();
+                    throw new Error(errorData.error || errorData.details || 'Failed to load links');
+                }
+                
+                const linksData = await linksResponse.json();
+
+                if (!linksData.links || linksData.links.length === 0) {
+                    linksContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>No links created yet. Create your first link above!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Get stats for each link (with cache busting to get fresh data)
+                const linksWithStats = await Promise.all(
+                    linksData.links.map(async (link) => {
+                        try {
+                            // Add timestamp to prevent caching
+                            const statsResponse = await fetch(`/api/links/${link.slug}/stats?t=${Date.now()}`);
+                            const statsData = await statsResponse.json();
+                            return {
+                                ...link,
+                                clicks: statsData.clicks || [],
+                                totalClicks: statsData.totalClicks || 0
+                            };
+                        } catch (error) {
+                            console.error(`Error loading stats for ${link.slug}:`, error);
+                            return {
+                                ...link,
+                                clicks: [],
+                                totalClicks: 0
+                            };
+                        }
+                    })
+                );
+
+                // Render links
+                linksContainer.innerHTML = linksWithStats.map((link, index) => {
+                    const url = `${window.location.origin}/l/${link.slug}`;
+                    const formattedDate = new Date(link.created_at).toLocaleString();
+                    const cardId = `link-card-${index}`;
+                    
+                    return `
+                        <div class="link-card" id="${cardId}">
+                            <div class="link-header">
+                                <span class="expand-icon" onclick="toggleLinkCard('${cardId}')">▼</span>
+                                <div class="link-header-content" onclick="toggleLinkCard('${cardId}')">
+                                    <div class="link-name">${escapeHtml(link.name)}</div>
+                                    <div class="link-meta">
+                                        <div class="click-count">${link.totalClicks} Click${link.totalClicks !== 1 ? 's' : ''}</div>
+                                    </div>
+                                </div>
+                                <div class="link-actions">
+                                    <button class="delete-btn" onclick="event.stopPropagation(); deleteLink('${link.slug}', '${escapeHtml(link.name)}')">🗑️ Delete</button>
+                                </div>
+                            </div>
+                            
+                            <div class="link-details">
+                                <div class="link-details-content">
+                                    <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #e9ecef;">
+                                        <div class="detail-item" style="background: transparent; padding: 0;">
+                                            <div class="detail-label">Link URL</div>
+                                            <div class="detail-value" style="font-family: 'Courier New', monospace; font-size: 13px; color: #667eea;">${url}</div>
+                                        </div>
+                                        <div class="detail-item" style="background: transparent; padding: 0; margin-top: 12px;">
+                                            <div class="detail-label">Created</div>
+                                            <div class="detail-value" style="font-size: 14px;">${formattedDate}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="clicks-list">
+                                        ${link.clicks.length > 0 ? 
+                                            link.clicks.map(click => {
+                                                const clickDate = new Date(click.clicked_at).toLocaleString();
+                                                const hasCoordinates = click.latitude && click.longitude;
+                                                let googleMapsLinkHtml = '';
+                                                if (hasCoordinates) {
+                                                    const lat = click.latitude;
+                                                    const lng = click.longitude;
+                                                    const mapsUrl = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+                                                    googleMapsLinkHtml = '<a href="' + mapsUrl + '" target="_blank" class="google-maps-link">View on Google Maps</a>';
+                                                }
+                                                
+                                                return `
+                                                    <div class="click-item">
+                                                        <div class="click-details">
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">IP Address</div>
+                                                                <div class="detail-value">${escapeHtml(click.ip_address || 'N/A')}</div>
+                                                            </div>
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">Latitude</div>
+                                                                <div class="detail-value">${click.latitude ? click.latitude.toFixed(6) : 'N/A'}</div>
+                                                                ${googleMapsLinkHtml}
+                                                            </div>
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">Longitude</div>
+                                                                <div class="detail-value">${click.longitude ? click.longitude.toFixed(6) : 'N/A'}</div>
+                                                            </div>
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">Country</div>
+                                                                <div class="detail-value">${escapeHtml(click.country || 'N/A')}</div>
+                                                            </div>
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">City</div>
+                                                                <div class="detail-value">${escapeHtml(click.city || 'N/A')}</div>
+                                                            </div>
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">Region</div>
+                                                                <div class="detail-value">${escapeHtml(click.region || 'N/A')}</div>
+                                                            </div>
+                                                            <div class="detail-item">
+                                                                <div class="detail-label">Clicked At</div>
+                                                                <div class="detail-value">${clickDate}</div>
+                                                            </div>
+                                                            ${click.user_agent ? `
+                                                            <div class="detail-item" style="grid-column: 1 / -1;">
+                                                                <div class="detail-label">User Agent</div>
+                                                                <div class="detail-value" style="font-size: 12px; word-break: break-all; font-weight: 400;">${escapeHtml(click.user_agent)}</div>
+                                                            </div>
+                                                            ` : ''}
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }).join('')
+                                            : 
+                                            '<div class="no-clicks">No clicks recorded yet for this link.</div>'
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading links:', error);
+                const errorMessage = error.message || 'Error loading links';
+                linksContainer.innerHTML = `
+                    <div class="loading" style="color: #dc3545;">
+                        <strong>Error:</strong> ${errorMessage}<br>
+                        <small style="margin-top: 10px; display: block;">
+                            Make sure you've run the database migration in Supabase SQL Editor.
+                        </small>
+                    </div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Modal functions
+        let currentModalResolve = null;
+        let escapeHandler = null;
+
+        function showDeleteModal(slug, linkName) {
+            return new Promise((resolve) => {
+                // Store the resolve function
+                currentModalResolve = resolve;
+                
+                // Create modal if it doesn't exist
+                let modalOverlay = document.getElementById('deleteModalOverlay');
+                if (!modalOverlay) {
+                    modalOverlay = document.createElement('div');
+                    modalOverlay.id = 'deleteModalOverlay';
+                    modalOverlay.className = 'modal-overlay';
+                    modalOverlay.innerHTML = `
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="modal-title">
+                                    <span class="modal-icon">⚠️</span>
+                                    Delete Link
+                                </div>
+                            </div>
+                            <div class="modal-message">
+                                Are you sure you want to delete this link?
+                            </div>
+                            <div class="modal-link-name" id="modalLinkName"></div>
+                            <div class="modal-warning">
+                                ⚠️ This will also delete all tracking data for this link. This action cannot be undone.
+                            </div>
+                            <div class="modal-actions">
+                                <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Cancel</button>
+                                <button class="modal-btn modal-btn-delete" id="modalDeleteBtn">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modalOverlay);
+                }
+
+                // Remove old event listeners by cloning and replacing buttons
+                const cancelBtn = document.getElementById('modalCancelBtn');
+                const deleteBtn = document.getElementById('modalDeleteBtn');
+                const newCancelBtn = cancelBtn.cloneNode(true);
+                const newDeleteBtn = deleteBtn.cloneNode(true);
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+                deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+
+                // Remove old escape handler if it exists
+                if (escapeHandler) {
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+
+                // Update modal content
+                document.getElementById('modalLinkName').textContent = linkName;
+
+                // Add new event listeners
+                modalOverlay.onclick = (e) => {
+                    if (e.target === modalOverlay) {
+                        hideDeleteModal();
+                        if (currentModalResolve) {
+                            currentModalResolve(false);
+                            currentModalResolve = null;
+                        }
+                    }
+                };
+
+                newCancelBtn.onclick = () => {
+                    hideDeleteModal();
+                    if (currentModalResolve) {
+                        currentModalResolve(false);
+                        currentModalResolve = null;
+                    }
+                };
+
+                newDeleteBtn.onclick = () => {
+                    hideDeleteModal();
+                    if (currentModalResolve) {
+                        currentModalResolve(true);
+                        currentModalResolve = null;
+                    }
+                };
+
+                // Close on Escape key
+                escapeHandler = (e) => {
+                    if (e.key === 'Escape') {
+                        hideDeleteModal();
+                        if (currentModalResolve) {
+                            currentModalResolve(false);
+                            currentModalResolve = null;
+                        }
+                        document.removeEventListener('keydown', escapeHandler);
+                        escapeHandler = null;
+                    }
+                };
+                document.addEventListener('keydown', escapeHandler);
+                
+                // Show modal
+                modalOverlay.classList.add('show');
+            });
+        }
+
+        function hideDeleteModal() {
+            const modalOverlay = document.getElementById('deleteModalOverlay');
+            if (modalOverlay) {
+                modalOverlay.classList.remove('show');
+            }
+        }
+
+        async function deleteLink(slug, linkName) {
+            // Delete directly without any confirmation
+            try {
+                const response = await fetch(`/api/links/${slug}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Show success message
+                    // Reload links list
+                    loadAllLinks();
+                } else {
+                    let errorMsg = data.error || 'Failed to delete link';
+                    if (data.details) {
+                        errorMsg += '\n\nDetails: ' + data.details;
+                    }
+                    if (data.hint) {
+                        errorMsg += '\n\n' + data.hint;
+                    }
+                    alert('Error: ' + errorMsg);
+                }
+            } catch (error) {
+                console.error('Error deleting link:', error);
+                alert('Failed to delete link. Please try again.\n\nError: ' + error.message);
+            }
+        }
+
+        // Auto-refresh functionality
+        let autoRefreshInterval = null;
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoRefreshBtn');
+            if (autoRefreshInterval) {
+                // Stop auto-refresh
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                btn.textContent = '▶️ Auto-Refresh: OFF';
+                btn.style.background = '#6c757d';
+            } else {
+                // Start auto-refresh (every 3 seconds)
+                autoRefreshInterval = setInterval(() => {
+                    console.log('Auto-refreshing links...');
+                    loadAllLinks();
+                }, 3000);
+                btn.textContent = '⏸️ Auto-Refresh: ON (3s)';
+                btn.style.background = '#28a745';
+            }
+        }
+    </script>
+</body>
+</html>

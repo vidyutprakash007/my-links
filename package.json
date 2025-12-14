@@ -1,0 +1,28 @@
+{
+  "name": "identity-link-tracker",
+  "version": "1.0.0",
+  "description": "Simple Fastify app with PostgreSQL for link generation and location tracking",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "fastify",
+    "postgresql",
+    "link-tracker"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/formbody": "^7.4.0",
+    "@fastify/static": "^6.12.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.24.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
