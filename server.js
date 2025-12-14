@@ -52,12 +52,33 @@ function decryptPayload(encryptedData) {
 }
 
 // Register plugins
+fastify.register(require('@fastify/cookie'));
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, 'public'),
   prefix: '/',
 });
 
 fastify.register(require('@fastify/formbody'));
+
+// Simple in-memory session store
+const sessions = new Map();
+
+// Authentication helper function
+function checkAuth(request) {
+  const sessionId = request.cookies.sessionId;
+  
+  if (!sessionId || !sessions.has(sessionId)) {
+    return null;
+  }
+  
+  const session = sessions.get(sessionId);
+  if (session.expires < Date.now()) {
+    sessions.delete(sessionId);
+    return null;
+  }
+  
+  return session.user;
+}
 
 // Helper function to escape HTML (prevent XSS)
 function escapeHtml(text) {
@@ -153,13 +174,121 @@ async function getLocationFromIP(ip) {
   };
 }
 
-// Route: Home page
+// Route: Login page
+fastify.get('/login', async (request, reply) => {
+  // If already logged in, redirect to home
+  const sessionId = request.cookies.sessionId;
+  if (sessionId && sessions.has(sessionId)) {
+    const session = sessions.get(sessionId);
+    if (session.expires > Date.now()) {
+      return reply.redirect('/');
+    }
+  }
+  
+  reply.type('text/html');
+  return reply.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Login</title>
+    </head>
+    <body style="margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div style="margin: 0; padding: 3rem; box-sizing: border-box; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
+        <h1 style="margin: 0 0 30px 0; padding: 0; box-sizing: border-box; color: #333; font-size: 28px; font-weight: 600; text-align: center;">Login</h1>
+        <form method="POST" action="/login" style="margin: 0; padding: 0; box-sizing: border-box;">
+          <div style="margin: 0 0 20px 0; padding: 0; box-sizing: border-box;">
+            <input type="text" name="username" placeholder="Username" required autofocus style="margin: 0; padding: 15px; box-sizing: border-box; width: 100%; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: all 0.3s;" onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <div style="margin: 0 0 20px 0; padding: 0; box-sizing: border-box;">
+            <input type="password" name="password" placeholder="Password" required style="margin: 0; padding: 15px; box-sizing: border-box; width: 100%; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: all 0.3s;" onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <button type="submit" style="margin: 0; padding: 15px; box-sizing: border-box; width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">Login</button>
+        </form>
+        ${request.query.error ? `<p style="margin: 20px 0 0 0; padding: 0; box-sizing: border-box; color: #dc3545; font-size: 14px; text-align: center;">${escapeHtml(request.query.error)}</p>` : ''}
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// Route: Login POST
+fastify.post('/login', async (request, reply) => {
+  const { username, password } = request.body;
+  
+  if (!username || !password) {
+    return reply.redirect('/login?error=Username and password are required');
+  }
+  
+  try {
+    // Check user in database
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, username, password')
+      .eq('username', username)
+      .single();
+    
+    if (error || !user) {
+      return reply.redirect('/login?error=Invalid username or password');
+    }
+    
+    // Simple password comparison (in production, use bcrypt)
+    if (user.password !== password) {
+      return reply.redirect('/login?error=Invalid username or password');
+    }
+    
+    // Create session
+    const sessionId = require('crypto').randomBytes(32).toString('hex');
+    const expires = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    sessions.set(sessionId, {
+      user: { id: user.id, username: user.username },
+      expires: expires
+    });
+    
+    // Set cookie
+    reply.setCookie('sessionId', sessionId, {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    
+    return reply.redirect('/');
+  } catch (error) {
+    fastify.log.error('Login error:', error);
+    return reply.redirect('/login?error=Login failed. Please try again.');
+  }
+});
+
+// Route: Logout
+fastify.get('/logout', async (request, reply) => {
+  const sessionId = request.cookies.sessionId;
+  if (sessionId) {
+    sessions.delete(sessionId);
+  }
+  reply.clearCookie('sessionId');
+  return reply.redirect('/login');
+});
+
+// Route: Home page (protected)
 fastify.get('/', async (request, reply) => {
+  const user = checkAuth(request);
+  if (!user) {
+    return reply.redirect('/login');
+  }
   return reply.sendFile('index.html');
 });
 
 // Route: Create a new link
 fastify.post('/api/links', async (request, reply) => {
+  const user = checkAuth(request);
+  if (!user) {
+    return reply.status(401).send({ error: 'Unauthorized. Please login.' });
+  }
+  
   try {
     const { name } = request.body;
     
@@ -887,6 +1016,11 @@ fastify.get('/api/links', async (request, reply) => {
 
 // Route: Delete a link
 fastify.delete('/api/links/:slug', async (request, reply) => {
+  const user = checkAuth(request);
+  if (!user) {
+    return reply.status(401).send({ error: 'Unauthorized. Please login.' });
+  }
+  
   try {
     const { slug } = request.params;
     
@@ -941,6 +1075,11 @@ fastify.delete('/api/links/:slug', async (request, reply) => {
 
 // Route: Get click statistics for a link
 fastify.get('/api/links/:slug/stats', async (request, reply) => {
+  const user = checkAuth(request);
+  if (!user) {
+    return reply.status(401).send({ error: 'Unauthorized. Please login.' });
+  }
+  
   try {
     const { slug } = request.params;
     
